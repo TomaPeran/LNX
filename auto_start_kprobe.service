@@ -1,0 +1,12 @@
+[Unit]
+Description=Loading kprobe on cdc_acm
+After=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c "while ! lsmod | grep -q cdc_acm; do sleep 1; done && /sbin/modprobe kprobe_test"
+
+[Install]
+WantedBy=multi-user.target
+
+
