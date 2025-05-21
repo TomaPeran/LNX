@@ -1,0 +1,8 @@
+modules.order  
+Module.symvers  
+my_usb_serial.c  
+my_usb_serial.ko  
+my_usb_serial.mod  
+my_usb_serial.mod.c  
+my_usb_serial.mod.o  
+my_usb_serial.o
