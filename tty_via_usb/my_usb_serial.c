@@ -13,10 +13,9 @@
 #define MY_TTY_MAJOR 240
 #define MY_TTY_MINORS 1
 
-// Change these to match your Raspberry Pi 4B USB device
-// You can find these values using 'lsusb' command
-#define VENDOR_ID  0x0525  // Likely value for RPi 4B
-#define PRODUCT_ID 0xa4a7  // Likely value for RPi 4B
+
+#define VENDOR_ID  0x0525
+#define PRODUCT_ID 0xa4a7
 
 static struct usb_device_id my_usb_table[] = {
     { USB_DEVICE(VENDOR_ID, PRODUCT_ID) },
