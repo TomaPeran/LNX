@@ -11,14 +11,20 @@
 const uint32_t red_led = 21;
 volatile sig_atomic_t signal_received = 0;
 
+
+int32_t SERIAL_ID = -1;
+
 void sigint_handler(int signal)
 {
     signal_received = signal;
+    gpioSetMode(red_led, PI_INPUT);
+    gpioTerminate();
+    close(SERIAL_ID);
 }
 
 int32_t terminal_init(int32_t serial)
 {
-    if (serial < 0) { return -1; }
+    if (serial< 0) { return -1; }
     struct termios options;
 
     if(tcgetattr(serial, &options) < 0) { return -1; }
@@ -34,24 +40,40 @@ int32_t terminal_init(int32_t serial)
     return 0;
 }
 
+void print_entry()
+{
+    printf("################################################\n");
+    printf("#                                              #\n");
+    printf("# Successfully initialized GPIO interface..... #\n");
+    printf("# Successfully opened serial port............. #\n");
+    printf("# Successfully configured terminal port....... #\n");
+    printf("# Server is ready............................. #\n");
+    printf("#                                              #\n");
+    printf("# Press CTRL+C for shutting down.............. #\n");
+    printf("################################################\n");
+
+}
 
 int32_t main() {
     if(gpioInitialise() == PI_INIT_FAILED) {
-        perror("Failed to initialize the GPIO interfaace\n");
+        perror("Failed to initialize the GPIO interface\n");
 	return -1;
     }
-    int32_t serial = open("/dev/ttyGS0", O_RDWR);
-    if (serial < 0) {
+
+    SERIAL_ID = open("/dev/ttyGS0", O_RDWR);
+    if (SERIAL_ID < 0) {
         perror("Error opening serial port");
         return -1;
     }
 
-    if(terminal_init(serial)) {
+    if(terminal_init(SERIAL_ID)) {
         perror("Failed to setup terminal connection!\n");
 	return -1;
     }
 
-    tcflush(serial, TCIOFLUSH);
+    print_entry();
+
+    tcflush(SERIAL_ID, TCIOFLUSH);
     sleep(1);
     char buffer[100];
     int32_t read_size = 0;
@@ -59,27 +81,26 @@ int32_t main() {
     signal(SIGINT, sigint_handler);
 
     while (!signal_received) {
-        read_size = read(serial, buffer, sizeof(buffer) - 1);  // Read response
-	printf("%d\n", read_size);
+        read_size = read(SERIAL_ID, buffer, sizeof(buffer) - 1);  // Read response
         if (read_size > 1) {
             buffer[read_size] = '\0';
-            printf("Got command: %s\n", buffer);
+            printf("Command: %s\n", buffer);
             if (!strcmp(buffer, "Turn on\n")) {
-		gpioWrite(red_led, PI_HIGH);
-		time_sleep(1);
-		tcflush(serial, TCIOFLUSH);
-                write(serial, "Done\n", 5);
-		printf("Turn on -> Done\n");
-                tcdrain(serial);
+                gpioWrite(red_led, PI_HIGH);
+                time_sleep(1);
+                tcflush(SERIAL_ID, TCIOFLUSH);
+                write(SERIAL_ID, "Done\n", 5);
+                printf("Turn on -> Done\n");
+                tcdrain(SERIAL_ID);
                 sleep(1);
             }
             else if (!strcmp(buffer, "Turn off\n")) {
-		gpioWrite(red_led, PI_LOW);
-		time_sleep(1);
-		tcflush(serial, TCIOFLUSH);
-                write(serial, "Done\n", 5);
-		printf("Turn off -> Done\n");
-                tcdrain(serial);
+                gpioWrite(red_led, PI_LOW);
+                time_sleep(1);
+                tcflush(SERIAL_ID, TCIOFLUSH);
+                write(SERIAL_ID, "Done\n", 5);
+                printf("Turn off -> Done\n");
+                tcdrain(SERIAL_ID);
                 sleep(1);
             }
             else {
@@ -89,9 +110,7 @@ int32_t main() {
         sleep(1);  // Wait for next data
     }
 
-    gpioSetMode(red_led, PI_INPUT);
     gpioTerminate();
-    close(serial);
+    close(SERIAL_ID);
     return 0;
 }
-
